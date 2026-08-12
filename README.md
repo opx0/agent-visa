@@ -122,6 +122,24 @@ specification of those guarantees: one test per property, named so a failure exp
 Next: bind a visa to a verified agent identity, swap the SQLite store for ego.ist/connect when it
 opens, and grow attested fields from a boolean into something checkable.
 
+## Running it somewhere public
+
+Two services and a reverse proxy. The console listens on 8787 and the HTTP transport on 8788, both
+on loopback; the proxy terminates TLS and routes `/mcp` to the second one.
+
+```
+ego.opxz.dev {
+    handle /mcp* { reverse_proxy 127.0.0.1:8788 }
+    handle       { reverse_proxy 127.0.0.1:8787 }
+}
+```
+
+Environment worth setting on a hosted copy: `AGENTVISA_DB` for a stable database path,
+`AGENTVISA_CONSOLE_URL` so the agent tells people the right address to approve at,
+`AGENTVISA_ALLOWED_HOSTS` for the proxy's hostname, and `AGENTVISA_NOTICE` to say out loud that the
+desk is shared. The public demo reseeds itself every thirty minutes with a systemd timer running
+`agentvisa-demo`, and the outbound ego.ist read is throttled so a shared toy stays a polite guest.
+
 ## Where AI Passport is used best
 
 Agents. The agentic-commerce stack already answers two questions: Web Bot Auth says *who the agent
