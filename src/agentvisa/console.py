@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 from collections.abc import AsyncIterator
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +39,12 @@ _STATUS = {
 }
 
 PAGE = (Path(__file__).parent / "templates" / "console.html").read_text(encoding="utf-8")
+
+# A hosted copy is a shared desk: say so, rather than letting a visitor think the
+# grants they are revoking are their own.
+NOTICE = os.environ.get("AGENTVISA_NOTICE", "")
+if NOTICE:
+    PAGE = PAGE.replace("</header>", f'<p class="notice">{escape(NOTICE)}</p></header>', 1)
 
 app = FastAPI(title="Agent Visa holder console")
 store = Store(database_path())
