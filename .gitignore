@@ -1,4 +1,9 @@
-visa.db
-approval.log
-__pycache__/
+*.db
+*.log
 *.pyc
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+dist/

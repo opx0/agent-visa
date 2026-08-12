@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Visa - holder console</title>
+<style>
+:root {
+  --paper: #F5F3EC;
+  --paper-line: #EAE7DD;
+  --card: #FFFFFF;
+  --ink: #111318;
+  --muted: #676C76;
+  --line: #E2DFD6;
+  --cobalt: #234C92;
+  --cobalt-deep: #16305E;
+  --accent: #234C92;
+  --accent-soft: #EAF0FB;
+  --coral: #F15A3A;
+  --coral-soft: #FDEBE5;
+  --yellow: #F2E600;
+  --green: #1E7A55;
+  --green-soft: #E4F3EC;
+  --shadow: 0 1px 2px rgba(17, 19, 24, .06), 0 12px 32px rgba(22, 48, 94, .08);
+  --focus: #234C92;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0F1116;
+    --paper-line: #14171E;
+    --card: #171B22;
+    --ink: #ECEEF2;
+    --muted: #99A0AC;
+    --line: #262B35;
+    --accent: #9CB8F0;
+    --accent-soft: #1B2434;
+    --coral: #FF7A5C;
+    --coral-soft: #34211C;
+    --green: #58C79A;
+    --green-soft: #16271F;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 40px rgba(0, 0, 0, .35);
+    --focus: #9CB8F0;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background:
+    repeating-linear-gradient(0deg, var(--paper), var(--paper) 31px, var(--paper-line) 32px);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  padding: 0 16px 64px;
+}
+
+a { color: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  left: 16px;
+  top: 12px;
+  z-index: 10;
+  background: var(--card);
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+header {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 2px 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.mark {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  font-stretch: 87.5%;
+}
+
+.mark em { font-style: normal; color: var(--coral); }
+
+.tagline {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: .04em;
+}
+
+.live {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.live[data-state="down"] .dot { background: var(--coral); }
+
+main {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 352px;
+  gap: 22px;
+  align-items: start;
+}
+
+.column { display: grid; gap: 22px; min-width: 0; }
+
+section h2 {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--card);
+  background: var(--coral);
+  border-radius: 20px;
+  padding: 1px 8px;
+  letter-spacing: .06em;
+}
+
+.passport {
+  background: linear-gradient(135deg, var(--cobalt), var(--cobalt-deep) 72%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 26px 28px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.passport::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.passport .kicker {
+  font-size: 10px;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  opacity: .78;
+}
+
+.passport .name {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  font-stretch: 87.5%;
+  margin-top: 8px;
+  line-height: 1.05;
+}
+
+.passport .serial {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: .1em;
+  margin-top: 10px;
+  opacity: .82;
+}
+
+.chip {
+  position: absolute;
+  top: 26px;
+  right: 28px;
+  width: 46px;
+  height: 34px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--yellow), var(--coral));
+}
+
+.tally {
+  display: flex;
+  gap: 26px;
+  margin-top: 20px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.tally b { display: block; font-size: 22px; letter-spacing: 0; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+
+.card + .card { margin-top: 12px; }
+
+.request {
+  border-left: 5px solid var(--coral);
+  animation: arrive 180ms ease-out;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.who { font-weight: 700; font-size: 16px; }
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.purpose {
+  margin: 8px 0 2px;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 2px;
+}
+
+.chip-field {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.chip-field .flag {
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  opacity: .85;
+  margin-left: 6px;
+}
+.chip-field.attested { border-color: var(--accent); }
+.chip-field.sensitive {
+  background: var(--coral-soft);
+  color: var(--coral);
+  border-color: var(--coral);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+button:active { transform: translateY(1px); }
+
+.primary { background: var(--ink); color: var(--paper); min-width: 168px; }
+.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.danger { background: var(--coral); color: #fff; }
+.danger:hover { background: color-mix(in srgb, var(--coral) 86%, black); }
+
+.state {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  border-radius: 20px;
+  padding: 3px 9px;
+  margin-left: auto;
+}
+.state.active { background: var(--green-soft); color: var(--green); }
+.state.revoked { background: var(--coral-soft); color: var(--coral); }
+.state.expired,
+.state.spent { background: var(--accent-soft); color: var(--muted); }
+
+.grant.dead { position: relative; opacity: .68; padding-bottom: 46px; }
+.grant.dead .chip-field { filter: grayscale(1); }
+.grant.dead::after {
+  content: attr(data-state);
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--coral);
+  border: 4px solid var(--coral);
+  border-radius: 10px;
+  padding: 2px 12px;
+  transform: rotate(-7deg);
+  opacity: .9;
+}
+.grant.died { animation: die 200ms ease-out; }
+.grant.died::after { animation: stamp 180ms ease-out; }
+
+.ttl {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--accent);
+}
+.ttl.soon { color: var(--coral); }
+
+.transit {
+  margin: 10px 0 0 20px;
+  border-left: 3px solid var(--cobalt);
+  position: relative;
+}
+.transit::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 26px;
+  width: 17px;
+  border-top: 3px solid var(--cobalt);
+}
+.transit .label {
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+  font-weight: 800;
+}
+
+.suggestion .proposal {
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  word-break: break-word;
+}
+
+.ledger {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.stamp {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 14px;
+  border-bottom: 1px dashed var(--line);
+  animation: arrive 180ms ease-out;
+}
+.stamp:last-child { border-bottom: 0; }
+
+.stamp .action {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.stamp.negative .action { color: var(--coral); }
+.stamp.special .action {
+  color: var(--ink);
+  background: var(--yellow);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+.stamp .at {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+.stamp .detail {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 13.5px;
+  padding: 12px 2px;
+}
+
+footer {
+  max-width: 1120px;
+  margin: 30px auto 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes die {
+  0% { transform: scale(1); }
+  40% { transform: scale(.985); background: var(--coral-soft); }
+  100% { transform: none; }
+}
+@keyframes stamp {
+  from { transform: rotate(-7deg) scale(1.7); opacity: 0; }
+  to { transform: rotate(-7deg) scale(1); opacity: .9; }
+}
+
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header>
+  <div class="mark">Agent&nbsp;<em>Visa</em></div>
+  <div class="tagline">Your passport stays home. Your agent travels on a visa.</div>
+  <div class="live" id="live" role="status" aria-live="polite"><span class="dot"></span><span id="live-text">connecting</span></div>
+</header>
+
+<main id="main">
+  <div class="column">
+    <section class="passport" aria-label="Passport holder">
+      <div class="chip" aria-hidden="true"></div>
+      <div class="kicker">AI Passport &middot; Holder</div>
+      <div class="name">ABHISHEK</div>
+      <div class="serial">PASSPORT STAYS HOME &middot; VISAS TRAVEL</div>
+      <div class="tally">
+        <div><b id="t-active">0</b>active grants</div>
+        <div><b id="t-visas">0</b>in transit</div>
+        <div><b id="t-reads">0</b>reads on record</div>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-requests">
+      <h2 id="h-requests">Border control <span class="count" id="req-count" hidden></span></h2>
+      <div id="requests"></div>
+    </section>
+
+    <section aria-labelledby="h-grants">
+      <h2 id="h-grants">Passes and transit visas</h2>
+      <div id="grants"></div>
+    </section>
+  </div>
+
+  <div class="column">
+    <section aria-labelledby="h-suggestions">
+      <h2 id="h-suggestions">Suggested writes</h2>
+      <div id="suggestions"></div>
+    </section>
+
+    <section aria-labelledby="h-receipts">
+      <h2 id="h-receipts">Receipts</h2>
+      <div class="ledger" id="receipts" aria-live="polite" aria-relevant="additions"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Every read, refusal, issuance and revocation above is a row in a local SQLite ledger standing in
+  for a gated memory backend. Reference implementation of the pass model in Egoist's public
+  documentation. Not affiliated with Egoist Machines, Inc.
+</footer>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+
+function button(label, cls, action, id) {
+  const b = el("button", cls, label);
+  b.dataset.action = action;
+  b.dataset.id = String(id);
+  b.dataset.key = action + ":" + id;
+  return b;
+}
+
+function empty(message) {
+  return el("div", "empty", message);
+}
+
+let clockSkew = 0;
+let meta = {};
+const seen = new Set();
+const lastState = new Map();
+
+const serverNow = () => Date.now() / 1000 + clockSkew;
+
+function fieldChip(path) {
+  const info = meta[path] || {};
+  const chip = el("span", "chip-field" + (info.sensitive ? " sensitive" : info.attested ? " attested" : ""));
+  chip.appendChild(el("span", null, path));
+  if (info.sensitive) chip.appendChild(el("span", "flag", "sensitive"));
+  else if (info.attested) chip.appendChild(el("span", "flag", "proof only"));
+  return chip;
+}
+
+function fieldRow(paths) {
+  const wrap = el("div", "fields");
+  paths.forEach((p) => wrap.appendChild(fieldChip(p)));
+  return wrap;
+}
+
+function clock(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+
+function ttlNode(grant) {
+  const node = el("span", "ttl");
+  if (grant.expires_at === null) {
+    node.textContent = grant.duration === "once" ? "one read only" : "no expiry";
+    return node;
+  }
+  node.dataset.expires = String(grant.expires_at);
+  return node;
+}
+
+function tick() {
+  const now = serverNow();
+  document.querySelectorAll(".ttl[data-expires]").forEach((node) => {
+    const left = Number(node.dataset.expires) - now;
+    node.textContent = left > 0 ? "expires in " + clock(left) : "expiring";
+    node.classList.toggle("soon", left <= 60);
+  });
+}
+
+function timeOf(epoch) {
+  return new Date(epoch * 1000).toLocaleTimeString([], { hour12: false });
+}
+
+function requestCard(req) {
+  const card = el("div", "card request");
+  const head = el("div", "head");
+  head.appendChild(el("span", "who", req.app));
+  head.appendChild(el("span", "mono", "wants a " + req.duration + " pass"));
+  card.appendChild(head);
+  card.appendChild(el("div", "purpose", "“" + req.purpose + "”"));
+  card.appendChild(fieldRow(req.fields));
+  card.appendChild(el("div", "mono", req.id));
+  const row = el("div", "row");
+  row.appendChild(button("Approve", "primary", "approve", req.id));
+  row.appendChild(button("Deny", "ghost", "deny", req.id));
+  card.appendChild(row);
+  return card;
+}
+
+function grantCard(grant, isTransit) {
+  const card = el("div", "card grant" + (isTransit ? " transit" : ""));
+  card.dataset.state = grant.state;
+  if (grant.state !== "active") card.classList.add("dead");
+  if (lastState.get(grant.id) === "active" && grant.state !== "active") card.classList.add("died");
+  lastState.set(grant.id, grant.state);
+
+  const head = el("div", "head");
+  if (isTransit) head.appendChild(el("span", "label", "transit visa"));
+  head.appendChild(el("span", "who", grant.holder));
+  head.appendChild(el("span", "state " + grant.state, grant.state));
+  card.appendChild(head);
+
+  card.appendChild(el("div", "mono", grant.id + " · " + grant.duration));
+  card.appendChild(fieldRow(grant.fields));
+
+  const facts = el("div", "mono");
+  facts.appendChild(el("span", null, grant.reads + (grant.reads === 1 ? " read" : " reads")));
+  card.appendChild(facts);
+
+  if (grant.state === "active") {
+    facts.appendChild(el("span", null, " · "));
+    facts.appendChild(ttlNode(grant));
+    const row = el("div", "row");
+    row.appendChild(button(isTransit ? "Revoke visa" : "Revoke pass and every visa", "danger", "revoke", grant.id));
+    card.appendChild(row);
+  }
+  return card;
+}
+
+function suggestionCard(sug) {
+  const card = el("div", "card suggestion");
+  const head = el("div", "head");
+  head.appendChild(el("span", "who", "Proposed write"));
+  head.appendChild(el("span", "mono", sug.grant_id || ""));
+  card.appendChild(head);
+  const proposal = el("div", "proposal");
+  proposal.appendChild(el("span", null, sug.path + " = “" + sug.value + "”"));
+  card.appendChild(proposal);
+  card.appendChild(el("div", "purpose", sug.reason));
+  const row = el("div", "row");
+  row.appendChild(button("Accept", "primary", "accept", sug.id));
+  row.appendChild(button("Reject", "ghost", "reject", sug.id));
+  card.appendChild(row);
+  return card;
+}
+
+const NEGATIVE = /refus|deny|denied|revok|expire/i;
+const SPECIAL = /sensitive/i;
+
+function stampRow(receipt) {
+  const row = el("div", "stamp");
+  if (NEGATIVE.test(receipt.action)) row.classList.add("negative");
+  if (SPECIAL.test(receipt.action)) row.classList.add("special");
+  const action = el("div", "action");
+  action.appendChild(el("span", null, receipt.action.replace(/_/g, " ")));
+  row.appendChild(action);
+  row.appendChild(el("div", "at", timeOf(receipt.at)));
+  row.appendChild(el("div", "detail", receipt.detail));
+  if (seen.has("receipt:" + receipt.id)) row.style.animation = "none";
+  seen.add("receipt:" + receipt.id);
+  return row;
+}
+
+function replace(target, nodes, emptyMessage) {
+  target.replaceChildren();
+  if (nodes.length === 0) {
+    target.appendChild(empty(emptyMessage));
+    return;
+  }
+  nodes.forEach((n) => target.appendChild(n));
+}
+
+function render(data) {
+  clockSkew = data.now - Date.now() / 1000;
+  meta = data.fields;
+
+  const focusKey = document.activeElement && document.activeElement.dataset
+    ? document.activeElement.dataset.key
+    : null;
+
+  replace($("requests"), data.requests.map(requestCard), "No pending requests. The desk is quiet.");
+  const count = $("req-count");
+  count.textContent = String(data.requests.length);
+  count.hidden = data.requests.length === 0;
+
+  const children = new Map();
+  data.grants.forEach((g) => {
+    if (g.parent_id === null) return;
+    if (!children.has(g.parent_id)) children.set(g.parent_id, []);
+    children.get(g.parent_id).push(g);
+  });
+  const grantNodes = [];
+  data.grants.filter((g) => g.parent_id === null).forEach((root) => {
+    const wrap = el("div");
+    wrap.appendChild(grantCard(root, false));
+    (children.get(root.id) || []).forEach((child) => wrap.appendChild(grantCard(child, true)));
+    grantNodes.push(wrap);
+  });
+  replace($("grants"), grantNodes, "Nothing issued yet.");
+
+  replace($("suggestions"), data.suggestions.map(suggestionCard),
+    "Inbox empty. Agents propose, you decide.");
+  replace($("receipts"), data.receipts.map(stampRow), "No stamps yet.");
+
+  $("t-active").textContent = String(data.grants.filter((g) => g.state === "active").length);
+  $("t-visas").textContent = String(data.grants.filter((g) => g.parent_id !== null).length);
+  $("t-reads").textContent = String(data.grants.reduce((n, g) => n + g.reads, 0));
+
+  if (focusKey) {
+    const again = document.querySelector('[data-key="' + focusKey.replace(/"/g, '\\"') + '"]');
+    if (again) again.focus();
+  }
+  tick();
+}
+
+document.addEventListener("click", (event) => {
+  const target = event.target.closest("button[data-action]");
+  if (!target) return;
+  const { action, id } = target.dataset;
+  const paths = {
+    approve: "/api/requests/" + encodeURIComponent(id) + "/approve",
+    deny: "/api/requests/" + encodeURIComponent(id) + "/deny",
+    revoke: "/api/grants/" + encodeURIComponent(id) + "/revoke",
+    accept: "/api/suggestions/" + encodeURIComponent(id) + "/accept",
+    reject: "/api/suggestions/" + encodeURIComponent(id) + "/reject",
+  };
+  target.disabled = true;
+  fetch(paths[action], { method: "POST" }).catch(() => { target.disabled = false; });
+});
+
+function connect() {
+  const source = new EventSource("/events");
+  source.onopen = () => {
+    $("live").dataset.state = "up";
+    $("live-text").textContent = "live";
+  };
+  source.onmessage = (event) => render(JSON.parse(event.data));
+  source.onerror = () => {
+    // EventSource reconnects by itself; only say so if the gap outlasts a blink.
+    setTimeout(() => {
+      if (source.readyState === EventSource.OPEN) return;
+      $("live").dataset.state = "down";
+      $("live-text").textContent = "reconnecting";
+    }, 1000);
+  };
+}
+
+connect();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

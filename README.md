@@ -1,19 +1,46 @@
-# Agent Visa — issued by your AI Passport
+# Agent Visa
 
 **Your passport stays home. Your agent travels on a visa.**
 
-The first third-party relying party for [AI Passport](https://ego.ist), built
-entirely from Egoist's public docs and live MCP API. Agents never hold the
-passport — they request exact fields with a purpose and a duration, the holder
-approves once, every read leaves a receipt, and revocation works mid-task.
+[![CI](https://github.com/opx0/agent-visa/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/opx0/agent-visa/actions/workflows/ci.yml)
 
-Egoist's privacy policy calls a grant *"an exact, revocable pass."* A pass
-issued for travel has a name: a **visa**. This repo finishes the sentence.
+A working relying party for [AI Passport](https://ego.ist): an MCP server that lets an agent ask
+for exact fields of your context, with a purpose and a duration, and gives you one screen to
+approve, watch and revoke. Every read leaves a receipt. Revocation works mid-task and cascades to
+any sub-agent.
 
-*Ideathon entry — Track: Agents · Lane: Build. Not affiliated with Egoist
-Machines, Inc.; built on their publicly documented MCP endpoint.*
+Egoist's privacy policy calls a grant "an exact, revocable pass". A pass issued for travel has a
+name: a **visa**. This repo finishes that sentence, and adds the one primitive their published
+model does not have yet — a **transit visa** a sub-agent can hold.
 
-## The loop (their published protocol, running)
+*Ideathon entry, Track: Agents, Lane: Build. Not affiliated with Egoist Machines, Inc.; built
+against their publicly documented MCP endpoint.*
+
+![The holder console](docs/console.png)
+
+## Thirty seconds
+
+```bash
+uv sync --all-extras
+uv run agentvisa-demo            # seed a passport and a demo state
+uv run agentvisa-console         # the holder console at http://127.0.0.1:8787
+```
+
+In another terminal, mount the server in Claude Code and talk to it:
+
+```bash
+claude mcp add agent-visa -- uv run --directory "$PWD" agentvisa-server
+```
+
+> Buy my friend Erin a birthday gift. Read her public passport first, then request a session pass
+> for my taste and my budget.
+
+Approve on the console, watch the receipts stamp, then hit **Revoke pass and every visa** while the
+agent is still working. Its next read comes back `REVOKED`.
+
+## How it works
+
+An agent never holds the passport. It asks, in the shape Egoist already publishes:
 
 ```json
 {
@@ -24,69 +51,77 @@ Machines, Inc.; built on their publicly documented MCP endpoint.*
 }
 ```
 
-request → inbox → approve → **scoped read** → receipt → **revoke (cascades)**
+The request lands in the holder's console. On approval the agent receives scoped context and
+nothing else. `commerce.budget` is marked attested, so the agent learns `commerce.approved: true`
+— the number never leaves the passport.
 
-Plus one new primitive Egoist hasn't published yet — the **transit visa**:
+A pass-holder may hand a narrower grant to a sub-agent:
 
 ```json
 {
-  "issue_visa": {
-    "parent_pass": "pass_7f3a",
-    "subset": ["taste.summary"],
-    "holder": "gift-runner",
-    "ttl_seconds": 600
-  }
+  "parent_pass": "pass_fd5a28d2",
+  "subset": ["taste.summary"],
+  "holder": "gift-runner",
+  "ttl_seconds": 600
 }
 ```
 
-Always a subset of the parent pass. Max 10 minutes. Depth-capped at one hop.
-Dies instantly when the parent is revoked. And `commerce.budget` is an
-**attested field**: agents receive `commerce.approved: true` — proof a budget
-exists — never the number.
+Always a subset. Capped at ten minutes and never outliving its parent. One hop only. Revoking the
+parent kills it in the same transaction.
 
-## Six tools, ready when your agent is
+![Architecture](docs/architecture.svg)
 
-| Tool | What it does |
+## Start reading here
+
+Five functions carry the whole security model. All of them are pure, take the current time as an
+argument, and live in [`policy.py`](src/agentvisa/policy.py):
+
+| Function | What it guarantees |
 |---|---|
-| `request_pass` | ask for exact fields + purpose + duration (`once\|session\|persistent`) |
-| `check_pass` | poll until the holder decides |
-| `read_context` | scoped read; attested fields return proof, not values |
-| `issue_visa` | delegate a subset to a sub-agent, TTL-bound, cascade-revocable |
-| `suggest_write` | propose a memory update — lands in the holder's inbox, never writes directly |
-| `read_public_passport` | **live** call to `ego.ist/api/cards/mcp` `read_public_profile` |
+| `resolve_state` | revocation beats expiry beats spend, so a dead grant is dead by every route |
+| `authorize_read` | a grant reads only the fields it was granted, and only while active |
+| `authorize_delegation` | a visa is a subset, capped at `MAX_VISA_TTL`, never outliving its parent, never issued by another visa, never carrying a special category |
+| `validate_request` | a special category cannot ride along with ordinary fields; it needs its own pass |
+| `project` | the single route a value takes to an agent: attested fields yield proof, never the value |
 
-## Run it
+The rest is deliberately thin. [`server.py`](src/agentvisa/server.py) parses, asks policy, touches
+the store, returns; its `_audit` helper stamps every refusal into the ledger on the way out.
+[`store.py`](src/agentvisa/store.py) is the only module that speaks SQL, and writes each receipt in
+the same transaction as the effect it records — `Store.revoke` cascades to children in one
+statement. [`console.py`](src/agentvisa/console.py) holds no rules at all.
 
 ```bash
-uv run store.py            # fresh passport scaffold (SQLite)
-uv run approval.py         # holder console → http://localhost:8787
-uv run test_flow.py        # full gift-scenario self-check (needs console up)
-
-# mount in Claude Code as an MCP server:
-claude mcp add agent-visa -- uv run --directory "$PWD" server.py
+make all       # ruff format check, ruff, mypy strict, pytest
+LIVE=1 uv run pytest -m live   # the one test that really calls ego.ist
 ```
 
-Then ask Claude: *"Buy my friend Erin a birthday gift. Read her public
-passport first, then request a session pass for my taste and budget."*
-Approve on the console. Watch the receipts stamp. Hit **Revoke** mid-task —
-the sub-agent's next read returns `VISA_REVOKED`.
+55 tests. The suite in [`tests/test_policy.py`](tests/test_policy.py) is written as the
+specification of those guarantees: one test per property, named so a failure explains itself.
 
-## Real vs. scaffold
+## Real versus scaffolding
 
 | Piece | Status |
 |---|---|
-| ego.ist MCP endpoint (`read_public_profile`) | **real, live calls** |
-| Recipient passport (`ego.ist/i/erin`, EGO · 000002) | **real published data** |
-| request → approve → read → receipt → revoke loop | **working code** (this repo, their published semantics) |
-| Memory store behind the loop | SQLite scaffold — swaps for `ego.ist/connect` the day it opens |
-| Payments | out of scope — that's ACP/AP2's leg of the stack |
+| `read_public_passport` against `ego.ist/api/cards/mcp` | real, live call |
+| request, approve, scoped read, receipt, revoke | working code, their published semantics |
+| transit visas, cascade revocation, attested fields | working code, not in their published model |
+| the passport store behind it | SQLite, standing in for the gated memory API at ego.ist/connect |
+| payments | out of scope; that is ACP or AP2's leg of the stack |
 
-## Why this is where AI Passport is used best
+Next: bind a visa to a verified agent identity, swap the SQLite store for ego.ist/connect when it
+opens, and grow attested fields from a boolean into something checkable.
 
-Agentic commerce already has two legs: Web Bot Auth proves **who the agent
-is**, ACP/AP2 moves **the money**. Nobody owns the third — **what the agent
-may know and decide on your behalf**. That leg is shaped exactly like AI
-Passport: scoped fields, purpose, duration, receipts, revocation. The gift
-scenario is the wedge, and it answers the cold-start question at serial
-000002: why publish a passport? Because people who love you shop better when
-you do.
+## Where AI Passport is used best
+
+Agents. The agentic-commerce stack already answers two questions: Web Bot Auth says *who the agent
+is*, ACP and AP2 move *the money*. Nobody owns the third — *what the agent may know and decide on
+your behalf*. That question is shaped exactly like a passport: scoped fields, a stated purpose, a
+duration, stamps, and the right to tear the stamp up.
+
+Gift-buying is the wedge, and it answers the cold-start problem too. At serial `EGO · 000002`, the
+reason to publish a passport is not that apps want your data. It is that people who love you shop
+better when you have one.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

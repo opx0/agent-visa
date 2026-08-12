@@ -1,0 +1,39 @@
+[project]
+name = "agentvisa"
+version = "0.1.0"
+description = "Your passport stays home. Your agent travels on a visa."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Abhishek Yadav" }]
+dependencies = ["fastmcp>=2", "fastapi", "uvicorn", "httpx"]
+
+[project.scripts]
+agentvisa-server = "agentvisa.server:main"
+agentvisa-console = "agentvisa.console:main"
+agentvisa-demo = "agentvisa.demo:main"
+
+[dependency-groups]
+dev = ["pytest", "ruff", "mypy"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentvisa"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "C4", "UP", "SIM"]
+
+[tool.mypy]
+files = ["src"]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -m 'not live'"
+markers = ["live: calls the real ego.ist API; run with LIVE=1 and -m live"]
