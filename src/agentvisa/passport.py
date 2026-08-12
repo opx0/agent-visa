@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+import time
+from collections import deque
 from typing import Any, Protocol
 
 import httpx
@@ -62,6 +64,28 @@ class PublicPassportClient:
                 ErrorCode.UPSTREAM_ERROR, f"ego.ist returned HTTP {response.status_code}"
             )
         return _parse(response.text)
+
+
+class ThrottledPassportSource:
+    """Caps outbound reads, so a publicly hosted demo stays a polite guest at ego.ist."""
+
+    def __init__(self, inner: PassportSource, per_minute: int = 20) -> None:
+        self._inner = inner
+        self._per_minute = per_minute
+        self._recent: deque[float] = deque()
+
+    def read(self, username: str) -> dict[str, Any]:
+        """Read through to ego.ist, or refuse once this minute's budget is spent."""
+        now = time.monotonic()
+        while self._recent and now - self._recent[0] > 60:
+            self._recent.popleft()
+        if len(self._recent) >= self._per_minute:
+            raise VisaError(
+                ErrorCode.UPSTREAM_ERROR,
+                "this shared demo has spent its ego.ist budget for the minute; try again shortly",
+            )
+        self._recent.append(now)
+        return self._inner.read(username)
 
 
 def _parse(body: str) -> dict[str, Any]:

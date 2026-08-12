@@ -9,6 +9,7 @@ dependencies = ["fastmcp>=2", "fastapi", "uvicorn", "httpx"]
 
 [project.scripts]
 agentvisa-server = "agentvisa.server:main"
+agentvisa-http = "agentvisa.server:main_http"
 agentvisa-console = "agentvisa.console:main"
 agentvisa-demo = "agentvisa.demo:main"
 

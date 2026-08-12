@@ -7,6 +7,7 @@ what the agent should do next, and every refusal names a code from the closed se
 from __future__ import annotations
 
 import functools
+import os
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -16,11 +17,11 @@ from fastmcp import FastMCP
 
 from agentvisa import policy
 from agentvisa.models import ErrorCode, RequestStatus, VisaError
-from agentvisa.passport import PassportSource, PublicPassportClient
+from agentvisa.passport import PassportSource, PublicPassportClient, ThrottledPassportSource
 from agentvisa.store import Store, database_path
 
 # Where the agent is told to send the person; console.py serves this address.
-CONSOLE_URL = "http://127.0.0.1:8787"
+CONSOLE_URL = os.environ.get("AGENTVISA_CONSOLE_URL", "http://127.0.0.1:8787")
 
 # The ledger names the person "holder", so the other side of the desk is the agent.
 AGENT = "agent"
@@ -194,6 +195,15 @@ def build_server(store: Store, source: PassportSource) -> FastMCP:
 def main() -> None:
     """Serve the real database and the live ego.ist client over stdio."""
     build_server(Store(database_path()), PublicPassportClient()).run()
+
+
+def main_http() -> None:
+    """Same server over HTTP, so a remote agent can mount it like any hosted MCP server."""
+    source = ThrottledPassportSource(PublicPassportClient())
+    server = build_server(Store(database_path()), source)
+    server.run(
+        transport="http", host="127.0.0.1", port=int(os.environ.get("PORT", "8788")), path="/mcp"
+    )
 
 
 if __name__ == "__main__":
