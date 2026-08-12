@@ -16,9 +16,20 @@ model does not have yet — a **transit visa** a sub-agent can hold.
 *Ideathon entry, Track: Agents, Lane: Build. Not affiliated with Egoist Machines, Inc.; built
 against their publicly documented MCP endpoint.*
 
+**Live: [ego.opxz.dev](https://ego.opxz.dev)** — the holder console, running. Mount the same server
+in any MCP client:
+
+```bash
+claude mcp add --transport http agent-visa https://ego.opxz.dev/mcp
+```
+
+Then ask your agent to read `erin`'s published ego.ist passport and request a pass, and watch the
+request appear on the live console for you to approve or refuse. It is one shared demo passport,
+reseeded every thirty minutes, so approve and revoke freely.
+
 ![The holder console](docs/console.png)
 
-## Thirty seconds
+## Thirty seconds, locally
 
 ```bash
 uv sync --all-extras
