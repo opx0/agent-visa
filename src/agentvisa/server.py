@@ -205,15 +205,17 @@ def main_http() -> None:
     """
     source = ThrottledPassportSource(PublicPassportClient())
     server = build_server(Store(database_path()), source)
+    options: dict[str, Any] = {
+        "transport": "http",
+        "host": "127.0.0.1",
+        "port": int(os.environ.get("PORT", "8788")),
+        "path": "/mcp",
+        "stateless_http": True,
+    }
     hosts = os.environ.get("AGENTVISA_ALLOWED_HOSTS", "")
-    server.run(
-        transport="http",
-        host="127.0.0.1",
-        port=int(os.environ.get("PORT", "8788")),
-        path="/mcp",
-        stateless_http=True,
-        **({"allowed_hosts": hosts.split(",")} if hosts else {}),
-    )
+    if hosts:
+        options["allowed_hosts"] = hosts.split(",")
+    server.run(**options)
 
 
 if __name__ == "__main__":
