@@ -198,11 +198,21 @@ def main() -> None:
 
 
 def main_http() -> None:
-    """Same server over HTTP, so a remote agent can mount it like any hosted MCP server."""
+    """Same server over HTTP, so a remote agent can mount it like any hosted MCP server.
+
+    Stateless, because a hosted demo should answer a bare tools/list the way ego.ist's own
+    endpoint does, rather than making every client open a session first.
+    """
     source = ThrottledPassportSource(PublicPassportClient())
     server = build_server(Store(database_path()), source)
+    hosts = os.environ.get("AGENTVISA_ALLOWED_HOSTS", "")
     server.run(
-        transport="http", host="127.0.0.1", port=int(os.environ.get("PORT", "8788")), path="/mcp"
+        transport="http",
+        host="127.0.0.1",
+        port=int(os.environ.get("PORT", "8788")),
+        path="/mcp",
+        stateless_http=True,
+        **({"allowed_hosts": hosts.split(",")} if hosts else {}),
     )
 
 
